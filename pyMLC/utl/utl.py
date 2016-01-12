@@ -1,51 +1,63 @@
 import math
 import numpy as np
 
-def B(v, q):
-    if v == 0:
-        return 1-q
-    else:
-        return q
+# def B(v, q):
+    # if v == 0:
+        # return 1-q
+    # else:
+        # return q
 
-def L_assembly(response_list, learning_curve, p):
-    '''
-    # Input:
-    (1) [Y1,Y2, ..., Yt] where t is the number of practice opportunity and Yt 0/1
-    (2) learning curve: T*1 array where t element is the prob(Y=0) at t th practice opportunity.
-    (3) p is the mixture density for this curve
-    '''
-    l = math.log(p)
-    for j in range(len(response_list)):
-        l += math.log(B(response_list[j], learning_curve[j]))
-    return l
+# def L_assembly(response_list, learning_curve, p):
+    # '''
+    Input:
+    # (1) [Y1,Y2, ..., Yt] where t is the number of practice opportunity and Yt 0/1
+    # (2) learning curve: T*1 array where t element is the prob(Y=0) at t th practice opportunity.
+    # (3) p is the mixture density for this curve
+    # '''
+    # l = math.log(p)
+    # for j in range(len(response_list)):
+        # l += math.log(B(response_list[j], learning_curve[j]))
+    # return l
 
+
+# def Z_assembly(response_list, learning_curve_matrix, mixture_density):
+    # '''
+    Input:
+    # (1) [Y1,Y2, ..., Yt] where t is the number of practice opportunity and Yt 0/1
+    # (2) learning curve matrix: T*j array, where T is the largest practice opportunity
+    # (3) response_list: {t:Y} where t is the number of practice opportunity and Y 0/1 is the binary responses
+
+    # all inputs are numpy array
+
+    Output
+    # level z
+    # '''
+    # J = mixture_density.shape[0]
+    # T, J1 = learning_curve_matrix.shape
+    # if J != J1:
+        # raise ValueError('Mixture density and learning curve matrix have different lengths.')
+
+    # ls = np.zeros(J)
+    # for j in range(J):
+        # ls[j] = np.exp(L_assembly(response_list, learning_curve_matrix[:, j], mixture_density[j]))
+
+    # z = ls/ls.sum()
+
+    # return z
 
 def Z_assembly(response_list, learning_curve_matrix, mixture_density):
-    '''
-    # Input:
-    (1) [Y1,Y2, ..., Yt] where t is the number of practice opportunity and Yt 0/1
-    (2) learning curve matrix: T*j array, where T is the largest practice opportunity
-    (3) response_list: {t:Y} where t is the number of practice opportunity and Y 0/1 is the binary responses
-
-    all inputs are numpy array
-
-    # Output
-    level z
-    '''
-    J = mixture_density.shape[0]
-    T, J1 = learning_curve_matrix.shape
-    if J != J1:
-        raise ValueError('Mixture density and learning curve matrix have different lengths.')
-
-    ls = np.zeros(J)
-    for j in range(J):
-        ls[j] = np.exp(L_assembly(response_list, learning_curve_matrix[:, j], mixture_density[j]))
-
-    z = ls/ls.sum()
-
-    return z
-
-
+    M = len(response_list)
+    N = len(mixture_density)
+    
+    respM = np.array(response_list).reshape((M, 1)).repeat(N, axis=1)
+    lc = learning_curve_matrix[:M, :]
+    
+    respM_c = 1 - respM
+    lc_c = 1 - lc
+    
+    logPosterior  = np.sum( np.log( np.multiply(respM, lc) + np.multiply(respM_c, lc_c) ), axis = 0) + np.log(mixture_density)
+    posterior = np.exp(logPosterior)
+    return posterior/posterior.sum()
 
 def update_mixture_density(response_lists, learning_curve_matrix, mixture_density):
     '''
